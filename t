@@ -8,7 +8,7 @@ set -o noclobber
 
 printf "1..1\n"
 
-if ./z
+if printf '' | ./z
 then
   printf "ok 1\n"
 else

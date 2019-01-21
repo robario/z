@@ -1,2 +1,8 @@
 *.o
+/.deps/
+/a.out
+/lex.*
+/y.*
 /z
+!/lex.yy.l
+!/y.tab.y
