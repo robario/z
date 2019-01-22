@@ -6,9 +6,10 @@
 #include "./generator.h"
 
 int main(void) {
-    if (parse() != 0) {
+    int status;
+    if (parse(&status) != 0) {
         return EXIT_FAILURE;
     }
-    generate();
+    generate(status);
     return EXIT_SUCCESS;
 }

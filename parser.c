@@ -1,7 +1,7 @@
 #include "./parser.h"
 
-int yyparse(void);
+int yyparse(int *status);
 
-int parse(void) {
-    return yyparse();
+int parse(int *status) {
+    return yyparse(status);
 }

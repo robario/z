@@ -1,6 +1,6 @@
 #ifndef GENERATOR_H
 #define GENERATOR_H
 
-void generate(void);
+void generate(int status);
 
 #endif
