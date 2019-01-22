@@ -1,7 +1,7 @@
 #include "./parser.h"
 
-int yyparse(void);
+int yyparse(YYSTYPE *yylval);
 
-int parse(void) {
-    return yyparse();
+int parse(NumberValue *status) {
+    return yyparse(status);
 }

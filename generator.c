@@ -16,11 +16,11 @@ extern FILE *yyout;
         fputc('\n', yyout);          \
     } while (0)
 
-void generate(void) {
+void generate(NumberValue status) {
     mnemonic(".intel_syntax noprefix");
     mnemonic(".text");
     mnemonic(".global _start");
     label("_start:");
-    mnemonic("mov rax, 0");
+    mnemonic("mov rax, %lld", status);
     mnemonic("ret");
 }
