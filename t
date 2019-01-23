@@ -6,13 +6,51 @@ set -o errexit
 set -o nounset
 set -o noclobber
 
-printf "1..1\n"
+topdir="$(cd -- $(dirname -- "$0") ; pwd)"
+t="$topdir/$(basename -- "$0")"
+z="$topdir/z"
 
-if printf '' | ./z
-then
-  printf "ok 1\n"
-else
-  printf "not ok 1\n"
-fi
+build="$(mktemp -d)"
+trap 'cd -- "$topdir" ; rm -rf -- "$build"' EXIT
+cd -- "$build"
+
+diag () {
+  printf "# %s\n" "$@"
+} 1>&2
+
+declare -i number=0
+is () {
+  local -r code="$1"
+  local -i expected="$2"
+  local -i got="$expected"
+  local error='not '
+
+  number+=1
+
+  if printf '%s' "$code" | "$z" 1>|./a.s && cc -e _start ./a.s
+  then
+    ./a.out && :
+    got=$?
+    if ((got == expected))
+    then
+      error=''
+    fi
+  fi
+
+  printf "%sok %d - %s\n" "$error" "$number" "'${code//$'\n'/\\n}'"
+  if [[ $error ]]
+  then
+    diag "  Failed test at number $number."
+    if ((got != expected))
+    then
+      diag "     got: $got"
+      diag "expected: $expected"
+    fi
+  fi
+}
+
+printf "1..%d\n" "$(grep --count '^is[ ][^\(]' -- "$t")"
+
+is '' 0
 
 exit 0
