@@ -1,6 +1,8 @@
 #ifndef GENERATOR_H
 #define GENERATOR_H
 
-void generate(int status);
+struct Node;
+
+void generate(Node *node);
 
 #endif

@@ -1,5 +1,5 @@
 %{
-#include "./y.tab.h"
+#include "./parser.h"
 
 int yywrap(void) {
     return 1;
@@ -9,5 +9,5 @@ int yywrap(void) {
 %option nounput
 dotall (.|\n)
 %%
-[[:digit:]]|[1-9][[:digit:]]+ { yylval = (int)strtol(yytext, NULL, 10); return NUMBER; }
+[[:digit:]]|[1-9][[:digit:]]+ { return (yylval = number(yytext))->type; }
 {dotall} { return yytext[0]; }

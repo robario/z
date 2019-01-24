@@ -4,18 +4,18 @@
 
 int yylex(void);
 
-void yyerror(int *status, const char *message) {
-    (void)status;
+void yyerror(Node **ast, const char *message) {
+    (void)ast;
     fprintf(stderr, "%s\n", message);
 }
 %}
-%parse-param { int *status }
+%parse-param { Node **ast }
 %token NUMBER
 %%
 program
         : error { YYABORT; }
-        | void { *status = 0; }
-        | NUMBER { *status = $1; }
+        | void { *ast = number("0"); }
+        | NUMBER { *ast = $1; }
         ;
 
 void

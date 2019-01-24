@@ -6,10 +6,10 @@
 #include "./generator.h"
 
 int main(void) {
-    int status;
-    if (parse(&status) != 0) {
+    Node *ast;
+    if (parse(&ast) != 0) {
         return EXIT_FAILURE;
     }
-    generate(status);
+    generate(ast);
     return EXIT_SUCCESS;
 }
