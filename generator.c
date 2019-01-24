@@ -5,7 +5,10 @@ extern FILE *yyout;
 
 #if DEBUG
 #include <stdarg.h>
+#include <stdlib.h>
 #include <string.h>
+
+static const ssize_t SPSIZE = 64 / 8;
 
 static void debug_printf(const char *format, ...) {
     static size_t indent = 0;
@@ -32,6 +35,8 @@ static void debug_printf(const char *format, ...) {
 }
 
 static void mnemonic_printf(const char *format, ...) {
+    static ssize_t sp = 0;
+
     char *buffer;
     va_list ap;
     va_start(ap, format);
@@ -39,6 +44,26 @@ static void mnemonic_printf(const char *format, ...) {
     va_end(ap);
 
     fputs(buffer, stderr);
+
+    ssize_t diff = 0;
+    if (sp != 0 && strcmp(buffer, "ret") == 0) {
+        error(" ; unbalanced stack");
+    } else if (strncmp(buffer, "push ", 5) == 0) {
+        diff = -SPSIZE;
+    } else if (strncmp(buffer, "pop ", 4) == 0) {
+        diff = +SPSIZE;
+    } else if (sscanf(buffer + 4, "rsp, %ld", &diff) != 0) {
+        if (strncmp(buffer, "sub ", 4) == 0) {
+            diff = -diff;
+        } else if (strncmp(buffer, "add ", 4) == 0) {
+            diff = +diff;
+        }
+    }
+    if (diff != 0) {
+        sp += diff;
+        fprintf(stderr, " \t; {%ld}", -(sp / SPSIZE));
+    }
+
     fputs(buffer, yyout);
 }
 #else
@@ -84,8 +109,10 @@ void generate(Node *node) {
             mnemonic("mov rax, %lld", NumberValue(node));
             break;
         }
+        mnemonic("push rax");
         break;
     }
+    mnemonic("pop rax");
     mnemonic("ret");
 
     debug("}");

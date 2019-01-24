@@ -20,4 +20,11 @@
 #define YYERROR_VERBOSE 0
 #endif
 
+#define error(...)                              \
+    do {                                        \
+        fprintf(stderr, "error: " __VA_ARGS__); \
+        fputc('\n', stderr);                    \
+        exit(1);                                \
+    } while (0)
+
 #endif
