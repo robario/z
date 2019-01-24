@@ -1,9 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "./parser.h"
 #include "./generator.h"
 
 extern FILE *yyout;
+
+static const size_t SPSIZE = 64 / 8;
 
 #if 1 <= DEBUG
 #include <stdarg.h>
@@ -25,6 +28,8 @@ static void debug_indent(int level) {
 #define debug(level, ...) (debug_indent(level), fprintf(stderr, __VA_ARGS__), fputc('\n', stderr))
 
 static void mnemonic_printf(const char *format, ...) {
+    static ssize_t sp = 0;
+
     va_list ap;
     va_start(ap, format);
     char *buffer = malloc(vsnprintf(NULL, 0, format, ap) + 1);
@@ -34,6 +39,28 @@ static void mnemonic_printf(const char *format, ...) {
     va_end(ap);
 
     fputs(buffer, stderr);
+
+    ssize_t diff = 0;
+    if (sp != 0 && strcmp(buffer, "ret") == 0) {
+        fputs(" ; unbalanced stack\n", stderr);
+        exit(1);
+    } else if (strncmp(buffer, "push ", 5) == 0) {
+        diff = -SPSIZE;
+    } else if (strncmp(buffer, "pop ", 4) == 0) {
+        diff = SPSIZE;
+    } else if (sscanf(buffer + 4, "rsp, %ld", &diff) != 0) {
+        if (strncmp(buffer, "sub ", 4) == 0) {
+            diff = -diff;
+        } else if (strncmp(buffer, "add ", 4) == 0) {
+            diff = +diff;
+        }
+    }
+
+    if (diff != 0) {
+        sp += diff;
+        fprintf(stderr, " \t; {%ld}", sp / -SPSIZE);
+    }
+
     fputs(buffer, yyout);
 }
 #else
@@ -63,8 +90,10 @@ void generate(Node *node) {
             mnemonic("mov rax, %lld", *(long long int *)node->value);
             break;
         }
+        mnemonic("push rax");
         break;
     }
+    mnemonic("pop rax");
     mnemonic("ret");
 
     debug(-1, "}");
