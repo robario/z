@@ -25,6 +25,12 @@ Node *binary(NodeType type, Node *lhs, Node *rhs) {
     return new_node(OPERATOR_NODE, type, value);
 }
 
+Node *unary(NodeType type, Node *operand) {
+    assert(enum_NodeType(type));
+    assert(operand);
+    return binary(type, operand, NULL);
+}
+
 Node *number(const char *yytext) {
     assert(strlen(yytext));
     NumberValue *value = malloc(sizeof(NumberValue));

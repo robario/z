@@ -18,6 +18,7 @@ void yyerror(YYSTYPE *yylval, const char *message) {
 %left ADD
 %left DIVIDE
 %left MULTIPLY
+%right MINUS
 
 %token NUMBER
 %%
@@ -34,9 +35,14 @@ additive
         ;
 
 multiplicative
+        : unary
+        | multiplicative DIVIDE unary { $$ = binary(DIVIDE, $1, $3); }
+        | multiplicative MULTIPLY unary { $$ = binary(MULTIPLY, $1, $3); }
+        ;
+
+unary
         : NUMBER
-        | multiplicative DIVIDE NUMBER { $$ = binary(DIVIDE, $1, $3); }
-        | multiplicative MULTIPLY NUMBER { $$ = binary(MULTIPLY, $1, $3); }
+        | MINUS unary { $$ = unary(MINUS, $2); }
         ;
 
 void

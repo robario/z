@@ -29,5 +29,6 @@ int yywrap(void) {
 " / " { return DIVIDE; }
 " + " { return ADD; }
 " - " { return SUBTRACT; }
+"-" { return MINUS; }
 [[:digit:]]|[1-9][[:digit:]]+ { return (yylval = number(yytext))->type; }
 . { return yytext[0]; }
