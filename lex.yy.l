@@ -25,6 +25,8 @@ int yywrap(void) {
 %option noinput
 %option nounput
 %%
+" * " { return MULTIPLY; }
+" / " { return DIVIDE; }
 " + " { return ADD; }
 " - " { return SUBTRACT; }
 [[:digit:]]|[1-9][[:digit:]]+ { return (yylval = number(yytext))->type; }
