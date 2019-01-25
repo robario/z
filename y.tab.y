@@ -21,11 +21,18 @@ void yyerror(YYSTYPE *yylval, const char *message) {
 %right MINUS
 
 %token NUMBER
+
+%token GROUP_BEGIN
+%token GROUP_END
 %%
 program
         : error { YYABORT; }
         | void { *ast = program(number("0")); }
-        | additive { *ast = program($1); }
+        | expression { *ast = program($1); }
+        ;
+
+expression
+        : additive
         ;
 
 additive
@@ -41,8 +48,13 @@ multiplicative
         ;
 
 unary
-        : NUMBER
+        : primary
         | MINUS unary { $$ = unary(MINUS, $2); }
+        ;
+
+primary
+        : NUMBER
+        | GROUP_BEGIN expression GROUP_END { $$ = $2; }
         ;
 
 void
