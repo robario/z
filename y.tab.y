@@ -31,6 +31,7 @@ static void yyprint(FILE *yyoutput, int yytype, const YYSTYPE yyvalue) {
 %left ADD
 %left DIVIDE
 %left MULTIPLY
+%right UMINUS
 
 %token NUMBER
 %%
@@ -47,9 +48,14 @@ additive
         ;
 
 multiplicative
+        : unary
+        | multiplicative DIVIDE unary { $$ = binary(DIVIDE, $1, $3); }
+        | multiplicative MULTIPLY unary { $$ = binary(MULTIPLY, $1, $3); }
+        ;
+
+unary
         : NUMBER
-        | multiplicative DIVIDE NUMBER { $$ = binary(DIVIDE, $1, $3); }
-        | multiplicative MULTIPLY NUMBER { $$ = binary(MULTIPLY, $1, $3); }
+        | UMINUS unary { $$ = unary(UMINUS, $2); }
         ;
 
 void

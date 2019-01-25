@@ -98,6 +98,9 @@ void generate(Node *node) {
         }
         mnemonic("pop rax");
         switch (node->type) {
+        case UMINUS:
+            mnemonic("neg rax");
+            break;
         case MULTIPLY:
             mnemonic("mul rdi");
             break;

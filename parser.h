@@ -34,6 +34,7 @@ int parse(Node **ast);
 
 Node *program(Node *body);
 Node *binary(NodeType type, Node *left, Node *right);
+Node *unary(NodeType type, Node *operand);
 Node *number(const char *yytext);
 
 #endif

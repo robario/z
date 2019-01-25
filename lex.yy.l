@@ -25,5 +25,6 @@ dotall (.|\n)
 " / " { return DIVIDE; }
 " + " { return ADD; }
 " - " { return SUBTRACT; }
+"-" { return UMINUS; }
 [[:digit:]]|[1-9][[:digit:]]+ { return (yylval = number(yytext))->type; }
 {dotall} { return yytext[0]; }

@@ -25,6 +25,10 @@ Node *binary(NodeType type, Node *left, Node *right) {
     return new_node(OPERATOR_NODE, type, NULL, left, right);
 }
 
+Node *unary(NodeType type, Node *operand) {
+    return binary(type, operand, NULL);
+}
+
 Node *number(const char *yytext) {
     long long int *value = malloc(sizeof(long long int));
     *value = strtoll(yytext, NULL, 10);
