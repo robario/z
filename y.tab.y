@@ -38,7 +38,11 @@ static void yyprint(FILE *yyoutput, int yytype, const YYSTYPE yyvalue) {
 program
         : error { YYABORT; }
         | void { *ast = program(number("0")); }
-        | additive { *ast = program($1); }
+        | expression { *ast = program($1); }
+        ;
+
+expression
+        : additive
         ;
 
 additive
@@ -54,8 +58,13 @@ multiplicative
         ;
 
 unary
-        : NUMBER
+        : primary
         | UMINUS unary { $$ = unary(UMINUS, $2); }
+        ;
+
+primary
+        : NUMBER
+        | '(' expression ')' { $$ = $2; }
         ;
 
 void
