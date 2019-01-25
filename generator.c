@@ -98,6 +98,13 @@ void generate(Node *node) {
         }
         mnemonic("pop rax");
         switch (node->type) {
+        case MULTIPLY:
+            mnemonic("mul rdi");
+            break;
+        case DIVIDE:
+            mnemonic("mov rdx, 0");
+            mnemonic("div rdi");
+            break;
         case ADD:
             mnemonic("add rax, rdi");
             break;

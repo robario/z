@@ -29,6 +29,8 @@ static void yyprint(FILE *yyoutput, int yytype, const YYSTYPE yyvalue) {
 
 %left SUBTRACT
 %left ADD
+%left DIVIDE
+%left MULTIPLY
 
 %token NUMBER
 %%
@@ -39,9 +41,15 @@ program
         ;
 
 additive
+        : multiplicative
+        | additive SUBTRACT multiplicative { $$ = binary(SUBTRACT, $1, $3); }
+        | additive ADD multiplicative { $$ = binary(ADD, $1, $3); }
+        ;
+
+multiplicative
         : NUMBER
-        | additive SUBTRACT NUMBER { $$ = binary(SUBTRACT, $1, $3); }
-        | additive ADD NUMBER { $$ = binary(ADD, $1, $3); }
+        | multiplicative DIVIDE NUMBER { $$ = binary(DIVIDE, $1, $3); }
+        | multiplicative MULTIPLY NUMBER { $$ = binary(MULTIPLY, $1, $3); }
         ;
 
 void
