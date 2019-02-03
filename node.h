@@ -8,7 +8,8 @@
 #define ENUM_TAG(tag) tag,
 #define ENUM_DEFINE(T) typedef enum T { T() } T; const char *enum_##T(T type)
 
-#define NodeClass() \
+#define NodeClass()        \
+    ENUM_TAG(GENERAL_NODE) \
     ENUM_TAG(VALUE_NODE)
 ENUM_DEFINE(NodeClass);
 
@@ -25,6 +26,8 @@ typedef struct Node {
     NodeType type;
     void *value;
 } Node;
+
+#define NodeValue(node) ((Node *)(node)->value)
 
 typedef long long int NumberValue;
 #define NumberValue(node) *((NumberValue *)(node)->value)

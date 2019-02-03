@@ -5,6 +5,8 @@
 
 Node *parse(void);
 
+Node *program(Node *body);
+
 Node *number(const char *yytext);
 
 #endif

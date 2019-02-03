@@ -98,22 +98,35 @@ static void mnemonic_printf(const char *format, ...) {
 void generate(Node *node) {
     debug("%s%s {", node_class_string(node), node_string(node));
 
-    mnemonic(".intel_syntax noprefix");
-    mnemonic(".text");
-    mnemonic(".global _start");
-    label("_start:");
     switch (node->class) {
     case VALUE_NODE:
         switch (node->type) {
         case NUMBER:
             mnemonic("mov rax, %lld", NumberValue(node));
             break;
+        default:
+            assert(0);
+            break;
         }
         mnemonic("push rax");
         break;
+    case GENERAL_NODE:
+        switch (node->type) {
+        case PROGRAM:
+            mnemonic(".intel_syntax noprefix");
+            mnemonic(".text");
+            mnemonic(".global _start");
+            label("_start:");
+            generate(NodeValue(node));
+            mnemonic("pop rax");
+            mnemonic("ret");
+            break;
+        default:
+            assert(0);
+            break;
+        }
+        break;
     }
-    mnemonic("pop rax");
-    mnemonic("ret");
 
     debug("}");
 }

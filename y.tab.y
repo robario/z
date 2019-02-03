@@ -12,12 +12,14 @@ void yyerror(YYSTYPE *yylval, const char *message) {
 #define YYPRINT(File, Type, Value) fputs((Value) && (Value)->type == Type ? node_string(Value) : enum_NodeType(Type), File)
 %}
 %parse-param { YYSTYPE *ast }
+%token PROGRAM
+
 %token NUMBER
 %%
 program
         : error { YYABORT; }
-        | void { *ast = number("0"); }
-        | NUMBER { *ast = $1; }
+        | void { *ast = program(number("0")); }
+        | NUMBER { *ast = program($1); }
         ;
 
 void

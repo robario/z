@@ -12,6 +12,10 @@ Node *parse(void) {
     return ast;
 }
 
+Node *program(Node *body) {
+    return new_node(GENERAL_NODE, PROGRAM, body);
+}
+
 Node *number(const char *yytext) {
     assert(strlen(yytext));
     NumberValue *value = malloc(sizeof(NumberValue));
