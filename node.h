@@ -31,4 +31,7 @@ typedef long long int NumberValue;
 
 Node *new_node(NodeClass class, NodeType type, void *value);
 
+char *node_class_string(Node *node);
+char *node_string(Node *node);
+
 #endif

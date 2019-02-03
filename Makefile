@@ -1,5 +1,5 @@
 CFLAGS = -Wall -Wextra -Werror
-YFLAGS = --defines --token-table
+YFLAGS = --defines --locations --token-table
 LFLAGS = --perf-report
 
 PROGRAMS = z
