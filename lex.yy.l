@@ -21,5 +21,7 @@ static void yy_user_action(void) {
 %option nounput
 dotall (.|\n)
 %%
+" + " { return ADD; }
+" - " { return SUBTRACT; }
 [[:digit:]]|[1-9][[:digit:]]+ { return (yylval = number(yytext))->type; }
 {dotall} { return yytext[0]; }
