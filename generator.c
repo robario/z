@@ -79,22 +79,33 @@ ENUM_DEFINE(NodeClass);
 void generate(Node *node) {
     debug(+1, "<%s, %s> {", enum_NodeClass(node->class), enum_yytokentype(node->type));
 
-    mnemonic(".intel_syntax noprefix");
-    mnemonic(".text");
-    mnemonic(".global _start");
-    label("_start:");
     switch (node->class) {
     case VALUE_NODE:
         switch (node->type) {
         case NUMBER:
             mnemonic("mov rax, %lld", *(long long int *)node->value);
             break;
+        default:
+            break;
         }
         mnemonic("push rax");
         break;
+    case GENERAL_NODE:
+        switch (node->type) {
+        case PROGRAM:
+            mnemonic(".intel_syntax noprefix");
+            mnemonic(".text");
+            mnemonic(".global _start");
+            label("_start:");
+            generate(node->value);
+            mnemonic("pop rax");
+            mnemonic("ret");
+            break;
+        default:
+            break;
+        }
+        break;
     }
-    mnemonic("pop rax");
-    mnemonic("ret");
 
     debug(-1, "}");
 }

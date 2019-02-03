@@ -25,12 +25,14 @@ static void yyprint(FILE *yyoutput, int yytype, const YYSTYPE yyvalue) {
 %token-table
 
 %parse-param { Node **ast }
+%token PROGRAM
+
 %token NUMBER
 %%
 program
         : error { YYABORT; }
-        | void { *ast = number("0"); }
-        | NUMBER { *ast = $1; }
+        | void { *ast = program(number("0")); }
+        | NUMBER { *ast = program($1); }
         ;
 
 void

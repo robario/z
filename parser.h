@@ -9,7 +9,8 @@
 
 #define ENUM_ID(ID) ID,
 
-#define NodeClass() \
+#define NodeClass()       \
+    ENUM_ID(GENERAL_NODE) \
     ENUM_ID(VALUE_NODE)
 ENUM_DECLARE(NodeClass);
 
@@ -22,12 +23,14 @@ typedef struct Node {
     NodeClass class;
     NodeType type;
     void *value;
+    struct Node *left;
 } Node;
 
 const char *enum_yytokentype(int yytype);
 
 int parse(Node **ast);
 
+Node *program(Node *body);
 Node *number(const char *yytext);
 
 #endif
