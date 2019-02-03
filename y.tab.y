@@ -14,12 +14,21 @@ void yyerror(YYSTYPE *yylval, const char *message) {
 %parse-param { YYSTYPE *ast }
 %token PROGRAM
 
+%left SUBTRACT
+%left ADD
+
 %token NUMBER
 %%
 program
         : error { YYABORT; }
         | void { *ast = program(number("0")); }
-        | NUMBER { *ast = program($1); }
+        | additive { *ast = program($1); }
+        ;
+
+additive
+        : NUMBER
+        | additive SUBTRACT NUMBER { $$ = binary(SUBTRACT, $1, $3); }
+        | additive ADD NUMBER { $$ = binary(ADD, $1, $3); }
         ;
 
 void

@@ -110,6 +110,26 @@ void generate(Node *node) {
         }
         mnemonic("push rax");
         break;
+    case OPERATOR_NODE:
+        generate(OperatorValue(node)->lhs);
+        if (OperatorValue(node)->rhs != NULL) {
+            generate(OperatorValue(node)->rhs);
+            mnemonic("pop rcx");
+        }
+        mnemonic("pop rax");
+        switch (node->type) {
+        case ADD:
+            mnemonic("add rax, rcx");
+            break;
+        case SUBTRACT:
+            mnemonic("sub rax, rcx");
+            break;
+        default:
+            assert(0);
+            break;
+        }
+        mnemonic("push rax");
+        break;
     case GENERAL_NODE:
         switch (node->type) {
         case PROGRAM:

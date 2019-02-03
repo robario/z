@@ -54,5 +54,7 @@ printf "1..%d\n" "$(grep --count '^is[ ][^\(]' -- "$t")"
 is '' 0
 is '0' 0
 is '42' 42
+is '2 + 8 + 32' 42
+is '49 - 7' 42
 
 exit 0
