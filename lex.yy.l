@@ -40,6 +40,8 @@ dotall (.|\n)
 " / " { return DIVIDE; }
 " + " { return ADD; }
 " - " { return SUBTRACT; }
+" == " { return EQ; }
+" != " { return NE; }
 " = " { return ASSIGN; }
 ", " { return COMMA; }
 "-" { return UMINUS; }

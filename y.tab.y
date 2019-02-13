@@ -53,6 +53,8 @@ void yyprint(FILE *yyoutput, enum yytokentype yytype, const YYSTYPE yyvalue) {
 %left SEPARATOR
 %left COMMA
 %right ASSIGN
+%left NE
+%left EQ
 %left SUBTRACT
 %left ADD
 %left DIVIDE
@@ -75,8 +77,14 @@ expression
         ;
 
 assignable
-        : additive
+        : equality
         | locator ASSIGN assignable { $$ = binary(ASSIGN, $1, $3); }
+        ;
+
+equality
+        : additive
+        | equality NE additive { $$ = binary(NE, $1, $3); }
+        | equality EQ additive { $$ = binary(EQ, $1, $3); }
         ;
 
 additive

@@ -190,6 +190,16 @@ void generate(Node *node) {
         case SUBTRACT:
             mnemonic("sub rax, rdi");
             break;
+        case EQ:
+            mnemonic("cmp rax, rdi");
+            mnemonic("sete al");
+            mnemonic("movzx rax, al");
+            break;
+        case NE:
+            mnemonic("cmp rax, rdi");
+            mnemonic("setne al");
+            mnemonic("movzx rax, al");
+            break;
         case ASSIGN:
             mnemonic("mov [rax], rdi");
             mnemonic("mov rax, [rax]");
