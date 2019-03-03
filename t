@@ -21,27 +21,38 @@ diag () {
 declare -i number=0
 is () {
   local -r code="$1"
-  local -i expected="$2"
-  local -i got="$expected"
+  local expected="$2"
+  local got="$expected"
   local error='not '
 
   number+=1
 
-  if printf '%s' "$code" | "$z" 1>|./a.s && cc -e _start ./a.s
+  if [[ -f $code ]]
   then
-    ./a.out && :
-    got=$?
-    if ((got == expected))
+    if "$z" "$code" 1>|./a.s && cc ./a.s
     then
-      error=''
+      ./a.out 1>|./stdout && :
+      got="$(cat ./stdout ; printf EOF)"
+      got="${got%EOF}"
     fi
+  else
+    if printf '%s' "$code" | "$z" 1>|./a.s && cc -e _start ./a.s
+    then
+      ./a.out && :
+      got=$?
+    fi
+  fi
+
+  if [[ $got == $expected ]]
+  then
+    error=''
   fi
 
   printf "%sok %d - %s\n" "$error" "$number" "'${code//$'\n'/\\n}'"
   if [[ $error ]]
   then
     diag "  Failed test at number $number."
-    if ((got != expected))
+    if [[ $got != $expected ]]
     then
       diag "     got: $got"
       diag "expected: $expected"
@@ -74,5 +85,6 @@ is 'srand(-12 + 5 * 42);rand()' $((3327786 % 256))
 is "puts('42')" 10
 is 'string = "42\n";write(1, string, strlen(string))' 3
 is 'hello = function(){"hello"};world = function(){"world"};printf("%s, %s\n", hello(), world())' 13
+is "$topdir/hello.q" $'hello, world\n'
 
 exit 0

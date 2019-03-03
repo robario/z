@@ -43,7 +43,7 @@ dotall (.|\n)
 " = " { return ASSIGN; }
 ", " { return COMMA; }
 "-" { return UMINUS; }
-";" { return SEPARATOR; }
+";"\n*\t* { return SEPARATOR; }
 [[:digit:]]|[1-9][[:digit:]]+ { return (yylval = number(yytext))->type; }
 [[:alpha:]][[:alnum:]]* { return (yylval = identifier(yytext))->type; }
 {dotall} { return yytext[0]; }
