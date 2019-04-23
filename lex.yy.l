@@ -16,15 +16,34 @@ static void yy_user_action(void) {
     }
 }
 #define YY_USER_ACTION yy_user_action();
+static char delimiter;
 %}
 %option noinput
 %option nounput
 dotall (.|\n)
+%x IN_STRING
 %%
+[\x22\x27] { delimiter = yytext[0]; BEGIN(IN_STRING); }
+<IN_STRING><<EOF>> { YY_FATAL_ERROR("unexpected EOF"); }
+<IN_STRING>[^\x22\x27\x5c]+ { yymore(); }
+<IN_STRING>\x5c{dotall} { yymore(); }
+<IN_STRING>[\x22\x27] {
+    if (yytext[yyleng - 1] == delimiter) {
+        yytext[yyleng - 1] = '\0';
+        BEGIN(INITIAL);
+        return (yylval = string(yytext, delimiter))->type;
+    }
+    yymore();
+}
+"function" { return FUNCTION; }
 " * " { return MULTIPLY; }
 " / " { return DIVIDE; }
 " + " { return ADD; }
 " - " { return SUBTRACT; }
+" = " { return ASSIGN; }
+", " { return COMMA; }
 "-" { return UMINUS; }
+";" { return SEPARATOR; }
 [[:digit:]]|[1-9][[:digit:]]+ { return (yylval = number(yytext))->type; }
+[[:alpha:]][[:alnum:]]* { return (yylval = identifier(yytext))->type; }
 {dotall} { return yytext[0]; }

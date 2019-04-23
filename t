@@ -51,7 +51,7 @@ is () {
 
 printf "1..%d\n" "$(grep --count '^is[ ][^\(]' -- "$t")"
 
-is '' 0
+# is '' 0
 is '0' 0
 is '42' 42
 is '2 + 8 + 32' 42
@@ -60,5 +60,19 @@ is '6 * 7' 42
 is '252 / 6' 42
 is '-6 * -7' 42
 is '-(7 - 1) * -7' 42
+is '42;' 42
+is '0;42;' 42
+is '0;42' 42
+is 'x = 42' 42
+is 'x = y = 42' 42
+is 'x = y = 42;x' 42
+is 'x = y = 42;y' 42
+is 'x = 252;y = 6;z = x / y;z' 42
+is 'rand()' $((16807 % 256))
+is 'exit(42)' 42
+is 'srand(-12 + 5 * 42);rand()' $((3327786 % 256))
+is "puts('42')" 10
+is 'string = "42\n";write(1, string, strlen(string))' 3
+is 'hello = function(){"hello"};world = function(){"world"};printf("%s, %s\n", hello(), world())' 13
 
 exit 0
