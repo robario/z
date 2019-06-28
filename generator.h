@@ -1,8 +1,8 @@
 #ifndef GENERATOR_H
 #define GENERATOR_H
 
-#include "./parser.h"
+#include "./node.h"
 
-void generate(NumberValue status);
+void generate(Node *node);
 
 #endif

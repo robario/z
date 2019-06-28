@@ -8,5 +8,5 @@ int yywrap(void) {
 %option noinput
 %option nounput
 %%
-[[:digit:]]|[1-9][[:digit:]]+ { yylval = strtoll(yytext, NULL, 10); return NUMBER; }
+[[:digit:]]|[1-9][[:digit:]]+ { return (yylval = number(yytext))->type; }
 . { return yytext[0]; }

@@ -16,11 +16,19 @@ extern FILE *yyout;
         fputc('\n', yyout);          \
     } while (0)
 
-void generate(NumberValue status) {
+void generate(Node *node) {
     mnemonic(".intel_syntax noprefix");
     mnemonic(".text");
     mnemonic(".global _start");
     label("_start:");
-    mnemonic("mov rax, %lld", status);
+    switch (node->class) {
+    case VALUE_NODE:
+        switch (node->type) {
+        case NUMBER:
+            mnemonic("mov rax, %lld", NumberValue(node));
+            break;
+        }
+        break;
+    }
     mnemonic("ret");
 }

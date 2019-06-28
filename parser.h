@@ -1,11 +1,10 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-typedef long long int NumberValue;
+#include "./node.h"
 
-#define YYSTYPE NumberValue
-#include "./y.tab.h"
+Node *parse(void);
 
-int parse(NumberValue *status);
+Node *number(const char *yytext);
 
 #endif
