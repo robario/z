@@ -24,6 +24,12 @@ Node *list_new(void) {
     return new_node(LIST_NODE, SEQUENTIAL, value);
 }
 
+Node *list_new_accumulable(void) {
+    Node *list = list_new();
+    list->type = ACCUMULABLE;
+    return list;
+}
+
 void list_append(Node *list, Node *node) {
     assert(list != NULL && list->class == LIST_NODE);
     assert(node);
@@ -78,13 +84,24 @@ char *node_string(Node *node) {
     case NUMBER:
         fprintf(memout, "%lld", NumberValue(node));
         break;
+    case STRING:
+        fputc('"', memout);
+        for (const char *c = StringValue(node); *c != '\0'; ++c) {
+            if (*c < 20) {
+                fprintf(memout, "\x5cx%02x", *c);
+            } else {
+                fputc(*c, memout);
+            }
+        }
+        fputc('"', memout);
+        break;
     case DELOCATOR:
         fprintf(memout, "'*%s'", StringValue(NodeValue(node)));
         break;
     case LOCATOR: case IDENTIFIER:
         fprintf(memout, "'%s'", StringValue(node));
         break;
-    case SEQUENTIAL:
+    case ACCUMULABLE: case SEQUENTIAL:
         fputc('[', memout);
         for (size_t index = 0; index < ListValue(node)->size; ++index) {
             if (index != 0) {

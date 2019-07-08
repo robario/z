@@ -95,7 +95,11 @@ static void mnemonic_printf(const char *format, ...) {
 
 #define debug(format, ...) debug_printf(format "\n", ##__VA_ARGS__)
 
+#define is_extern(node) (is_global((node)) && list_index(ProgramValue(program)->global_list, (node)) == (size_t)-1)
+
 void generate(Node *node) {
+    static const char *const registers[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+    static const size_t total_registers = sizeof(registers) / sizeof(char *);
     static Node *program;
     static Node *function;
 
@@ -104,28 +108,57 @@ void generate(Node *node) {
     switch (node->class) {
     case VALUE_NODE:
         switch (node->type) {
+            size_t total_stacks;
+            size_t actual_stacks;
         case NUMBER:
             mnemonic("mov rax, %lld", NumberValue(node));
+            break;
+        case STRING:
+            mnemonic("lea rax, [rip + string.%zu]", list_index(ProgramValue(program)->string_list, node));
             break;
         case DELOCATOR:
             generate(NodeValue(node));
             mnemonic("pop rax");
-            mnemonic("mov rax, [rax]");
+            if (!is_extern(NodeValue(node))) {
+                mnemonic("mov rax, [rax]");
+            }
             break;
         case LOCATOR:
-            mnemonic("mov rax, rbp");
-            mnemonic("sub rax, %zu", SPSIZE * (list_index(FunctionValue(function)->table, node) + 1));
+            if (is_extern(node)) {
+                mnemonic("mov rax, [rip + _%s@GOTPCREL]", StringValue(node) + sizeof(char));
+            } else if (is_global(node)) {
+                mnemonic("lea rax, [rip + _%s]", StringValue(node) + sizeof(char));
+            } else {
+                mnemonic("mov rax, rbp");
+                mnemonic("sub rax, %zu", SPSIZE * (list_index(FunctionValue(function)->table, node) + 1));
+            }
             break;
         case FUNCTION:
             mnemonic("lea rax, [rip + function.%zu]", list_index(ProgramValue(program)->function_list, node));
             break;
         case CALL:
+            total_stacks = ListValue(FunctionValue(node)->parameter_list)->size;
+            actual_stacks = total_registers < total_stacks ? total_stacks - total_registers : 0;
+
             // 16 bytes stack alignment
             mnemonic("mov rcx, rsp");
-            mnemonic("add rcx, %zu", SPSIZE * 1);
+            mnemonic("add rcx, %zu", SPSIZE * (actual_stacks + 1));
             mnemonic("and rcx, 0x000000000000000F");
             mnemonic("sub rsp, rcx");
             mnemonic("push rcx");
+
+            // parameters
+            generate(FunctionValue(node)->parameter_list);
+            for (size_t dest = 0; dest < total_stacks; ++dest) {
+                size_t src = total_stacks - dest - 1;
+                if (dest < total_registers) {
+                    mnemonic("mov %s, [rsp + %zu]", registers[dest], SPSIZE * src);
+                } else {
+                    mnemonic("mov rax, [rsp + %zu]", SPSIZE * src);
+                    mnemonic("mov [rsp + %zu], rax", SPSIZE * dest);
+                }
+            }
+            mnemonic("add rsp, %zu", SPSIZE * (total_stacks - actual_stacks));
 
             // call
             generate(FunctionValue(node)->body);
@@ -133,6 +166,7 @@ void generate(Node *node) {
             mnemonic("call rax");
 
             // cleanup
+            mnemonic("add rsp, %zu", SPSIZE * actual_stacks);
             mnemonic("pop rcx");
             mnemonic("add rsp, rcx");
             break;
@@ -178,6 +212,11 @@ void generate(Node *node) {
         break;
     case LIST_NODE:
         switch (node->type) {
+        case ACCUMULABLE:
+            for (size_t index = 0; index < ListValue(node)->size; ++index) {
+                generate(ListValue(node)->nodes[index]);
+            }
+            break;
         case SEQUENTIAL:
             for (size_t index = 0; index < ListValue(node)->size; ++index) {
                 generate(ListValue(node)->nodes[index]);
@@ -203,13 +242,24 @@ void generate(Node *node) {
             mnemonic("jmp rax");
 
             for (size_t index = 0; index < ListValue(ProgramValue(program)->function_list)->size; ++index) {
-                label("function.%zu:", index);
                 function = ListValue(ProgramValue(program)->function_list)->nodes[index];
+                label("function.%zu:", index);
                 size_t total_stacks = ListValue(FunctionValue(function)->table)->size;
 
                 mnemonic("push rbp");
                 mnemonic("mov rbp, rsp");
                 mnemonic("sub rsp, %zu", SPSIZE * total_stacks);
+
+                for (size_t index = 0; index < ListValue(FunctionValue(function)->parameter_list)->size; ++index) {
+                    generate(ListValue(FunctionValue(function)->parameter_list)->nodes[index]);
+                    mnemonic("pop rax");
+                    if (index < total_registers) {
+                        mnemonic("mov [rax], %s", registers[index]);
+                    } else {
+                        mnemonic("mov rcx, [rbp + %zu]", SPSIZE * (index - total_registers + 2)); // 2 = skip rbp and rip
+                        mnemonic("mov [rax], rcx");
+                    }
+                }
 
                 generate(FunctionValue(function)->body);
                 mnemonic("pop rax");
@@ -218,6 +268,23 @@ void generate(Node *node) {
                 mnemonic("mov rsp, rbp");
                 mnemonic("pop rbp");
                 mnemonic("ret");
+            }
+
+            mnemonic(".data");
+            for (size_t index = 0; index < ListValue(ProgramValue(program)->string_list)->size; ++index) {
+                label("string.%zu:", index);
+                mnemonic_begin();
+                mnemonic_printf(".byte");
+                for (const char *c = StringValue(ListValue(ProgramValue(program)->string_list)->nodes[index]); *c != '\0'; ++c) {
+                    mnemonic_printf(" 0x%02X,", *c);
+                }
+                mnemonic_printf(" 0x00");
+                mnemonic_end();
+            }
+            for (size_t index = 0; index < ListValue(ProgramValue(program)->global_list)->size; ++index) {
+                const char *name = StringValue(ListValue(ProgramValue(program)->global_list)->nodes[index]) + sizeof(char);
+                mnemonic(".global _%s", name);
+                label("_%s: .quad 0", name);
             }
             break;
         default:

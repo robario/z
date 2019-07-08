@@ -21,16 +21,32 @@ int yywrap(void) {
     } while (0)                                   \
         ;
 #endif
+
+static char delimiter;
 %}
 %option noinput
 %option nounput
+%x IN_STRING
 %%
+[\x22\x27] { delimiter = yytext[0]; BEGIN(IN_STRING); }
+<IN_STRING><<EOF>> { YY_FATAL_ERROR("unexpected EOF"); }
+<IN_STRING>[^\x22\x27\x5c]+ { yymore(); }
+<IN_STRING>\x5c. { yymore(); }
+<IN_STRING>[\x22\x27] {
+    if (yytext[yyleng - 1] == delimiter) {
+        yytext[yyleng - 1] = '\0';
+        BEGIN(INITIAL);
+        return (yylval = string(yytext, delimiter))->type;
+    }
+    yymore();
+}
 "function " { return FUNCTION; }
 " * " { return MULTIPLY; }
 " / " { return DIVIDE; }
 " + " { return ADD; }
 " - " { return SUBTRACT; }
 " = " { return ASSIGN; }
+", " { return ACCUMULABLE; }
 "-" { return MINUS; }
 ";" { return SEQUENTIAL; }
 "(" { return GROUP_BEGIN; }
@@ -38,5 +54,5 @@ int yywrap(void) {
 " {" { return BLOCK_BEGIN; }
 "}" { return BLOCK_END; }
 [[:digit:]]|[1-9][[:digit:]]+ { return (yylval = number(yytext))->type; }
-[[:alpha:]][[:alnum:]]* { return (yylval = identifier(yytext))->type; }
+"."?[[:alpha:]][[:alnum:]]* { return (yylval = identifier(yytext))->type; }
 . { return yytext[0]; }

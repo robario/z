@@ -27,7 +27,7 @@ is () {
 
   number+=1
 
-  if printf '%s' "$code" | "$z" 1>|./a.s && cc -e _start ./a.s
+  if printf '%s' "$code" | "$z" 1>|./a.s && as ./a.s && ld -e _start -lSystem ./a.out
   then
     ./a.out && :
     got=$?
@@ -69,5 +69,9 @@ is 'x = y = 42;y = 0;y' 0
 is 'x = function () {42};x()' 42
 is 'x = y = function () {7};-x() * -x() - y()' 42
 is 'x = function () {x = function () {42};x + 7};(x() - 7)()' 42
+is 'square = function (x) {x = x * x};x = 7;square(x) - x' 42
+is 'inc = function () {function (x) {x + 1}};(inc())(41)' 42
+is 'inc = function () {f = function (x) {x + 1}};(inc())(41)' 42
+# is 'x = y = function(){7};f = function(a, b){a() * a() - b()};f(x, y)' 42
 
 exit 0

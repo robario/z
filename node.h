@@ -50,6 +50,7 @@ typedef struct {
 #define ListValue(node) ((ListValue *)(node)->value)
 
 typedef struct {
+    Node *parameter_list;
     Node *table;
     Node *body;
 } FunctionValue;
@@ -57,6 +58,8 @@ typedef struct {
 
 typedef struct {
     Node *function_list;
+    Node *string_list;
+    Node *global_list;
     Node *body;
 } ProgramValue;
 #define ProgramValue(node) ((ProgramValue *)(node)->value)
@@ -64,11 +67,14 @@ typedef struct {
 Node *new_node(NodeClass class, NodeType type, void *value);
 
 Node *list_new(void);
+Node *list_new_accumulable(void);
 void list_append(Node *list, Node *node);
 size_t list_index(Node *list, Node *node);
 Node *list_find(Node *list, const void *value, size_t size);
 
 char *node_class_string(Node *node);
 char *node_string(Node *node);
+
+#define is_global(node) (StringValue((node))[0] == '.')
 
 #endif

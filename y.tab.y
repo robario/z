@@ -26,8 +26,10 @@ void yyerror(YYSTYPE *yylval, const char *message) {
 %token LOCATOR
 %token DELOCATOR
 %token IDENTIFIER
+%token STRING
 %token NUMBER
 
+%token ACCUMULABLE
 %token SEQUENTIAL
 %token GROUP_BEGIN
 %token GROUP_END
@@ -53,11 +55,17 @@ expression
 assignable
         : additive
         | locator ASSIGN assignable { $$ = binary(ASSIGN, $1, $3); }
-        | function GROUP_BEGIN GROUP_END BLOCK_BEGIN sequential_expression BLOCK_END { $$ = function($5); }
+        | function GROUP_BEGIN formal GROUP_END BLOCK_BEGIN sequential_expression BLOCK_END { $$ = function($3, $6); }
         ;
 
 function
         : FUNCTION { table_new(); }
+        ;
+
+formal
+        : void { $$ = list_new_accumulable(); }
+        | locator { $$ = list_new_accumulable(); list_append($$, $1); }
+        | formal ACCUMULABLE locator { $$ = $1; list_append($$, $3); }
         ;
 
 locator
@@ -83,11 +91,18 @@ unary
 
 postfix
         : primary
-        | postfix GROUP_BEGIN GROUP_END { $$ = call($1); }
+        | postfix GROUP_BEGIN actual GROUP_END { $$ = call($1, $3); }
+        ;
+
+actual
+        : void { $$ = list_new_accumulable(); }
+        | expression { $$ = list_new_accumulable(); list_append($$, $1); }
+        | actual ACCUMULABLE expression { $$ = $1; list_append($$, $3); }
         ;
 
 primary
         : NUMBER
+        | STRING
         | delocator
         | GROUP_BEGIN expression GROUP_END { $$ = $2; }
         ;
