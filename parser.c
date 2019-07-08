@@ -6,8 +6,10 @@
 int yyparse(YYSTYPE *yylval);
 
 static Node *table;
+static Node *function_list;
 
 Node *parse(void) {
+    function_list = list_new();
     table = list_new();
     Node *ast;
     if (yyparse(&ast) != 0) {
@@ -19,9 +21,22 @@ Node *parse(void) {
 Node *program(Node *body) {
     assert(body);
     ProgramValue *value = malloc(sizeof(ProgramValue));
+    value->function_list = function_list;
+    value->body = function(body);
+    return new_node(GENERAL_NODE, PROGRAM, value);
+}
+
+Node *function(Node *body) {
+    assert(body);
+    assert(body->class == LIST_NODE && body->type == SEQUENTIAL);
+
+    FunctionValue *value = malloc(sizeof(FunctionValue));
     value->table = table;
     value->body = body;
-    return new_node(GENERAL_NODE, PROGRAM, value);
+
+    Node *function = new_node(VALUE_NODE, FUNCTION, value);
+    list_append(function_list, function);
+    return function;
 }
 
 Node *binary(NodeType type, Node *lhs, Node *rhs) {

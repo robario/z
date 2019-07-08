@@ -52,6 +52,12 @@ typedef struct {
 typedef struct {
     Node *table;
     Node *body;
+} FunctionValue;
+#define FunctionValue(node) ((FunctionValue *)(node)->value)
+
+typedef struct {
+    Node *function_list;
+    Node *body;
 } ProgramValue;
 #define ProgramValue(node) ((ProgramValue *)(node)->value)
 

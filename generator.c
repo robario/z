@@ -97,6 +97,7 @@ static void mnemonic_printf(const char *format, ...) {
 
 void generate(Node *node) {
     static Node *program;
+    static Node *function;
 
     debug("%s%s {", node_class_string(node), node_string(node));
 
@@ -113,7 +114,10 @@ void generate(Node *node) {
             break;
         case LOCATOR:
             mnemonic("mov rax, rbp");
-            mnemonic("sub rax, %zu", SPSIZE * (list_index(ProgramValue(program)->table, node) + 1));
+            mnemonic("sub rax, %zu", SPSIZE * (list_index(FunctionValue(function)->table, node) + 1));
+            break;
+        case FUNCTION:
+            mnemonic("lea rax, [rip + function.%zu]", list_index(ProgramValue(program)->function_list, node));
             break;
         default:
             assert(0);
@@ -177,20 +181,27 @@ void generate(Node *node) {
             mnemonic(".text");
             mnemonic(".global _start");
             label("_start:");
-
-            size_t total_stacks = ListValue(ProgramValue(program)->table)->size;
-
-            mnemonic("push rbp");
-            mnemonic("mov rbp, rsp");
-            mnemonic("sub rsp, %zu", SPSIZE * total_stacks);
-
             generate(ProgramValue(program)->body);
             mnemonic("pop rax");
+            mnemonic("jmp rax");
 
-            mnemonic("add rsp, %zu", SPSIZE * total_stacks);
-            mnemonic("mov rsp, rbp");
-            mnemonic("pop rbp");
-            mnemonic("ret");
+            for (size_t index = 0; index < ListValue(ProgramValue(program)->function_list)->size; ++index) {
+                label("function.%zu:", index);
+                function = ListValue(ProgramValue(program)->function_list)->nodes[index];
+                size_t total_stacks = ListValue(FunctionValue(function)->table)->size;
+
+                mnemonic("push rbp");
+                mnemonic("mov rbp, rsp");
+                mnemonic("sub rsp, %zu", SPSIZE * total_stacks);
+
+                generate(FunctionValue(function)->body);
+                mnemonic("pop rax");
+
+                mnemonic("add rsp, %zu", SPSIZE * total_stacks);
+                mnemonic("mov rsp, rbp");
+                mnemonic("pop rbp");
+                mnemonic("ret");
+            }
             break;
         default:
             assert(0);

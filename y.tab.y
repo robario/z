@@ -13,6 +13,7 @@ void yyerror(YYSTYPE *yylval, const char *message) {
 %}
 %parse-param { YYSTYPE *ast }
 %token PROGRAM
+%token FUNCTION
 
 %right ASSIGN
 %left SUBTRACT
