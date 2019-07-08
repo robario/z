@@ -66,5 +66,8 @@ is 'x = 42' 42
 is 'x = y = 42' 42
 is 'x = y = 42;y = 0;x' 42
 is 'x = y = 42;y = 0;y' 0
+is 'x = function () {42};x()' 42
+is 'x = y = function () {7};-x() * -x() - y()' 42
+is 'x = function () {x = function () {42};x + 7};(x() - 7)()' 42
 
 exit 0

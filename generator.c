@@ -119,6 +119,23 @@ void generate(Node *node) {
         case FUNCTION:
             mnemonic("lea rax, [rip + function.%zu]", list_index(ProgramValue(program)->function_list, node));
             break;
+        case CALL:
+            // 16 bytes stack alignment
+            mnemonic("mov rcx, rsp");
+            mnemonic("add rcx, %zu", SPSIZE * 1);
+            mnemonic("and rcx, 0x000000000000000F");
+            mnemonic("sub rsp, rcx");
+            mnemonic("push rcx");
+
+            // call
+            generate(FunctionValue(node)->body);
+            mnemonic("pop rax");
+            mnemonic("call rax");
+
+            // cleanup
+            mnemonic("pop rcx");
+            mnemonic("add rsp, rcx");
+            break;
         default:
             assert(0);
             break;

@@ -14,6 +14,7 @@ void yyerror(YYSTYPE *yylval, const char *message) {
 %parse-param { YYSTYPE *ast }
 %token PROGRAM
 %token FUNCTION
+%token CALL
 
 %right ASSIGN
 %left SUBTRACT
@@ -30,6 +31,8 @@ void yyerror(YYSTYPE *yylval, const char *message) {
 %token SEQUENTIAL
 %token GROUP_BEGIN
 %token GROUP_END
+%token BLOCK_BEGIN
+%token BLOCK_END
 %%
 program
         : error { YYABORT; }
@@ -50,6 +53,11 @@ expression
 assignable
         : additive
         | locator ASSIGN assignable { $$ = binary(ASSIGN, $1, $3); }
+        | function GROUP_BEGIN GROUP_END BLOCK_BEGIN sequential_expression BLOCK_END { $$ = function($5); }
+        ;
+
+function
+        : FUNCTION { table_new(); }
         ;
 
 locator
@@ -69,8 +77,13 @@ multiplicative
         ;
 
 unary
-        : primary
+        : postfix
         | MINUS unary { $$ = unary(MINUS, $2); }
+        ;
+
+postfix
+        : primary
+        | postfix GROUP_BEGIN GROUP_END { $$ = call($1); }
         ;
 
 primary

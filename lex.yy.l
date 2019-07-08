@@ -25,6 +25,7 @@ int yywrap(void) {
 %option noinput
 %option nounput
 %%
+"function " { return FUNCTION; }
 " * " { return MULTIPLY; }
 " / " { return DIVIDE; }
 " + " { return ADD; }
@@ -34,6 +35,8 @@ int yywrap(void) {
 ";" { return SEQUENTIAL; }
 "(" { return GROUP_BEGIN; }
 ")" { return GROUP_END; }
+" {" { return BLOCK_BEGIN; }
+"}" { return BLOCK_END; }
 [[:digit:]]|[1-9][[:digit:]]+ { return (yylval = number(yytext))->type; }
 [[:alpha:]][[:alnum:]]* { return (yylval = identifier(yytext))->type; }
 . { return yytext[0]; }
