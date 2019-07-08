@@ -15,9 +15,16 @@
 #if 2 <= DEBUG
 #define YYDEBUG 1
 #define YYERROR_VERBOSE 1
+#define verbose(...)                            \
+    do {                                        \
+        fprintf(stderr, "## %s(): ", __func__); \
+        fprintf(stderr, __VA_ARGS__);           \
+        fputc('\n', stderr);                    \
+    } while (0)
 #else
 #define YYDEBUG 0
 #define YYERROR_VERBOSE 0
+#define verbose(...) ((void)0)
 #endif
 
 #define error(...)                              \

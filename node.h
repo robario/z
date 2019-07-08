@@ -10,6 +10,7 @@
 
 #define NodeClass()         \
     ENUM_TAG(GENERAL_NODE)  \
+    ENUM_TAG(LIST_NODE)     \
     ENUM_TAG(OPERATOR_NODE) \
     ENUM_TAG(VALUE_NODE)
 ENUM_DEFINE(NodeClass);
@@ -39,7 +40,17 @@ typedef struct {
 } OperatorValue;
 #define OperatorValue(node) ((OperatorValue *)(node)->value)
 
+typedef struct {
+    size_t size;
+    Node **nodes;
+    size_t capacity;
+} ListValue;
+#define ListValue(node) ((ListValue *)(node)->value)
+
 Node *new_node(NodeClass class, NodeType type, void *value);
+
+Node *list_new(void);
+void list_append(Node *list, Node *node);
 
 char *node_class_string(Node *node);
 char *node_string(Node *node);

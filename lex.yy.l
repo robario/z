@@ -30,6 +30,7 @@ int yywrap(void) {
 " + " { return ADD; }
 " - " { return SUBTRACT; }
 "-" { return MINUS; }
+";" { return SEQUENTIAL; }
 "(" { return GROUP_BEGIN; }
 ")" { return GROUP_END; }
 [[:digit:]]|[1-9][[:digit:]]+ { return (yylval = number(yytext))->type; }

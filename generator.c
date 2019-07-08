@@ -140,6 +140,20 @@ void generate(Node *node) {
         }
         mnemonic("push rax");
         break;
+    case LIST_NODE:
+        switch (node->type) {
+        case SEQUENTIAL:
+            for (size_t index = 0; index < ListValue(node)->size; ++index) {
+                generate(ListValue(node)->nodes[index]);
+                mnemonic("pop rax");
+            }
+            mnemonic("push rax");
+            break;
+        default:
+            assert(0);
+            break;
+        }
+        break;
     case GENERAL_NODE:
         switch (node->type) {
         case PROGRAM:

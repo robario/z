@@ -22,13 +22,20 @@ void yyerror(YYSTYPE *yylval, const char *message) {
 
 %token NUMBER
 
+%token SEQUENTIAL
 %token GROUP_BEGIN
 %token GROUP_END
 %%
 program
         : error { YYABORT; }
-        | void { *ast = program(number("0")); }
-        | expression { *ast = program($1); }
+        | sequential_expression { $$ = program($1); *ast = $$; }
+        ;
+
+sequential_expression
+        : void { $$ = list_new(); list_append($$, number("0")); }
+        | expression { $$ = list_new(); list_append($$, $1); }
+        | sequential_expression SEQUENTIAL expression { $$ = $1; list_append($$, $3); }
+        | sequential_expression SEQUENTIAL void
         ;
 
 expression
