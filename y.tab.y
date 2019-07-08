@@ -22,6 +22,7 @@ void yyerror(YYSTYPE *yylval, const char *message) {
 %right MINUS
 
 %token LOCATOR
+%token DELOCATOR
 %token IDENTIFIER
 %token NUMBER
 
@@ -73,7 +74,12 @@ unary
 
 primary
         : NUMBER
+        | delocator
         | GROUP_BEGIN expression GROUP_END { $$ = $2; }
+        ;
+
+delocator
+        : IDENTIFIER { $$ = delocator($1); }
         ;
 
 void

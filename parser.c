@@ -53,6 +53,17 @@ Node *locator(Node *identifier) {
     return node;
 }
 
+Node *delocator(Node *identifier) {
+    assert(identifier);
+    assert(identifier->type == IDENTIFIER);
+    const char *name = StringValue(identifier);
+    Node *node = list_find(table, name, strlen(name) + 1);
+    if (node == NULL) {
+        error("use of undeclared identifier %s", node_string(identifier));
+    }
+    return new_node(VALUE_NODE, DELOCATOR, node);
+}
+
 Node *identifier(const char *yytext) {
     assert(strlen(yytext));
     char *value = strdup(yytext);

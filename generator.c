@@ -106,6 +106,11 @@ void generate(Node *node) {
         case NUMBER:
             mnemonic("mov rax, %lld", NumberValue(node));
             break;
+        case DELOCATOR:
+            generate(NodeValue(node));
+            mnemonic("pop rax");
+            mnemonic("mov rax, [rax]");
+            break;
         case LOCATOR:
             mnemonic("mov rax, rbp");
             mnemonic("sub rax, %zu", SPSIZE * (list_index(ProgramValue(program)->table, node) + 1));

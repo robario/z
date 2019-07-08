@@ -78,6 +78,9 @@ char *node_string(Node *node) {
     case NUMBER:
         fprintf(memout, "%lld", NumberValue(node));
         break;
+    case DELOCATOR:
+        fprintf(memout, "'*%s'", StringValue(NodeValue(node)));
+        break;
     case LOCATOR: case IDENTIFIER:
         fprintf(memout, "'%s'", StringValue(node));
         break;
