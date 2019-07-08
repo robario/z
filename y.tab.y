@@ -14,12 +14,15 @@ void yyerror(YYSTYPE *yylval, const char *message) {
 %parse-param { YYSTYPE *ast }
 %token PROGRAM
 
+%right ASSIGN
 %left SUBTRACT
 %left ADD
 %left DIVIDE
 %left MULTIPLY
 %right MINUS
 
+%token LOCATOR
+%token IDENTIFIER
 %token NUMBER
 
 %token SEQUENTIAL
@@ -39,7 +42,16 @@ sequential_expression
         ;
 
 expression
+        : assignable
+        ;
+
+assignable
         : additive
+        | locator ASSIGN assignable { $$ = binary(ASSIGN, $1, $3); }
+        ;
+
+locator
+        : IDENTIFIER { $$ = locator($1); }
         ;
 
 additive

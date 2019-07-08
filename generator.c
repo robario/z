@@ -3,12 +3,12 @@
 
 extern FILE *yyout;
 
+static const ssize_t SPSIZE = 64 / 8;
+
 #if DEBUG
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
-
-static const ssize_t SPSIZE = 64 / 8;
 
 static void debug_printf(const char *format, ...) {
     static size_t indent = 0;
@@ -96,6 +96,8 @@ static void mnemonic_printf(const char *format, ...) {
 #define debug(format, ...) debug_printf(format "\n", ##__VA_ARGS__)
 
 void generate(Node *node) {
+    static Node *program;
+
     debug("%s%s {", node_class_string(node), node_string(node));
 
     switch (node->class) {
@@ -103,6 +105,10 @@ void generate(Node *node) {
         switch (node->type) {
         case NUMBER:
             mnemonic("mov rax, %lld", NumberValue(node));
+            break;
+        case LOCATOR:
+            mnemonic("mov rax, rbp");
+            mnemonic("sub rax, %zu", SPSIZE * (list_index(ProgramValue(program)->table, node) + 1));
             break;
         default:
             assert(0);
@@ -134,6 +140,10 @@ void generate(Node *node) {
         case SUBTRACT:
             mnemonic("sub rax, rcx");
             break;
+        case ASSIGN:
+            mnemonic("mov [rax], rcx");
+            mnemonic("mov rax, [rax]");
+            break;
         default:
             assert(0);
             break;
@@ -157,12 +167,24 @@ void generate(Node *node) {
     case GENERAL_NODE:
         switch (node->type) {
         case PROGRAM:
+            program = node;
             mnemonic(".intel_syntax noprefix");
             mnemonic(".text");
             mnemonic(".global _start");
             label("_start:");
-            generate(NodeValue(node));
+
+            size_t total_stacks = ListValue(ProgramValue(program)->table)->size;
+
+            mnemonic("push rbp");
+            mnemonic("mov rbp, rsp");
+            mnemonic("sub rsp, %zu", SPSIZE * total_stacks);
+
+            generate(ProgramValue(program)->body);
             mnemonic("pop rax");
+
+            mnemonic("add rsp, %zu", SPSIZE * total_stacks);
+            mnemonic("mov rsp, rbp");
+            mnemonic("pop rbp");
             mnemonic("ret");
             break;
         default:

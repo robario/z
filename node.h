@@ -34,6 +34,8 @@ typedef struct Node {
 typedef long long int NumberValue;
 #define NumberValue(node) *((NumberValue *)(node)->value)
 
+#define StringValue(node) ((char *)(node)->value)
+
 typedef struct {
     Node *lhs;
     Node *rhs;
@@ -47,10 +49,18 @@ typedef struct {
 } ListValue;
 #define ListValue(node) ((ListValue *)(node)->value)
 
+typedef struct {
+    Node *table;
+    Node *body;
+} ProgramValue;
+#define ProgramValue(node) ((ProgramValue *)(node)->value)
+
 Node *new_node(NodeClass class, NodeType type, void *value);
 
 Node *list_new(void);
 void list_append(Node *list, Node *node);
+size_t list_index(Node *list, Node *node);
+Node *list_find(Node *list, const void *value, size_t size);
 
 char *node_class_string(Node *node);
 char *node_string(Node *node);

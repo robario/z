@@ -29,9 +29,11 @@ int yywrap(void) {
 " / " { return DIVIDE; }
 " + " { return ADD; }
 " - " { return SUBTRACT; }
+" = " { return ASSIGN; }
 "-" { return MINUS; }
 ";" { return SEQUENTIAL; }
 "(" { return GROUP_BEGIN; }
 ")" { return GROUP_END; }
 [[:digit:]]|[1-9][[:digit:]]+ { return (yylval = number(yytext))->type; }
+[[:alpha:]][[:alnum:]]* { return (yylval = identifier(yytext))->type; }
 . { return yytext[0]; }

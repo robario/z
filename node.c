@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "./node.h"
 
 ENUM_DEFINE(NodeClass);
@@ -39,6 +40,29 @@ void list_append(Node *list, Node *node) {
     verbose("%s", node_string(list));
 }
 
+size_t list_index(Node *list, Node *node) {
+    assert(list != NULL && list->class == LIST_NODE);
+    assert(node);
+    for (size_t index = 0; index < ListValue(list)->size; ++index) {
+        if (ListValue(list)->nodes[index] == node) {
+            return index;
+        }
+    }
+    return (size_t)-1;
+}
+
+Node *list_find(Node *list, const void *value, size_t size) {
+    assert(list != NULL && list->class == LIST_NODE);
+    assert(value);
+    assert(size);
+    for (size_t index = 0; index < ListValue(list)->size; ++index) {
+        if (memcmp(ListValue(list)->nodes[index]->value, value, size) == 0) {
+            return ListValue(list)->nodes[index];
+        }
+    }
+    return NULL;
+}
+
 char *node_class_string(Node *node) {
     assert(node);
     char *string = NULL;
@@ -53,6 +77,9 @@ char *node_string(Node *node) {
     switch (node->type) {
     case NUMBER:
         fprintf(memout, "%lld", NumberValue(node));
+        break;
+    case LOCATOR: case IDENTIFIER:
+        fprintf(memout, "'%s'", StringValue(node));
         break;
     case SEQUENTIAL:
         fputc('[', memout);
