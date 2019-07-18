@@ -57,6 +57,12 @@ typedef struct {
 #define FunctionValue(node) ((FunctionValue *)(node)->value)
 
 typedef struct {
+    const char *name;
+    Node *node;
+} GlobalValue;
+#define GlobalValue(node) ((GlobalValue *)(node)->value)
+
+typedef struct {
     Node *function_list;
     Node *string_list;
     Node *global_list;
@@ -76,5 +82,6 @@ char *node_class_string(Node *node);
 char *node_string(Node *node);
 
 #define is_global(node) (StringValue((node))[0] == '.')
+#define is_extern(node) (is_global((node)) && strrchr(StringValue((node)), '.') != StringValue((node)))
 
 #endif

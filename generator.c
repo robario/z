@@ -95,11 +95,10 @@ static void mnemonic_printf(const char *format, ...) {
 
 #define debug(format, ...) debug_printf(format "\n", ##__VA_ARGS__)
 
-#define is_extern(node) (is_global((node)) && list_index(ProgramValue(program)->global_list, (node)) == (size_t)-1)
-
 void generate(Node *node) {
     static const char *const registers[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
     static const size_t total_registers = sizeof(registers) / sizeof(char *);
+    static Node *global_list;
     static Node *program;
     static Node *function;
 
@@ -119,15 +118,15 @@ void generate(Node *node) {
         case DELOCATOR:
             generate(NodeValue(node));
             mnemonic("pop rax");
-            if (!is_extern(NodeValue(node))) {
+            if (!is_extern(NodeValue(node)))
+//            if (!is_global(NodeValue(node)))
+            {
                 mnemonic("mov rax, [rax]");
             }
             break;
         case LOCATOR:
-            if (is_extern(node)) {
-                mnemonic("mov rax, [rip + _%s@GOTPCREL]", StringValue(node) + sizeof(char));
-            } else if (is_global(node)) {
-                mnemonic("lea rax, [rip + _%s]", StringValue(node) + sizeof(char));
+            if (is_global(node)) {
+                mnemonic("mov rax, [rip + _%s@GOTPCREL]", strrchr(StringValue(node), '.') + sizeof(char));
             } else {
                 mnemonic("mov rax, rbp");
                 mnemonic("sub rax, %zu", SPSIZE * (list_index(FunctionValue(function)->table, node) + 1));
@@ -201,6 +200,19 @@ void generate(Node *node) {
             mnemonic("sub rax, rcx");
             break;
         case ASSIGN:
+            if (is_global(OperatorValue(node)->lhs) && !is_extern(OperatorValue(node)->lhs)) {
+                const char *name = StringValue(OperatorValue(node)->lhs);
+
+                Node *global = list_find(global_list, name, strlen(name) + sizeof(char));
+                if (global != NULL) {
+                    error("cannot assign global multiple: %s", node_string(OperatorValue(node)->lhs));
+                }
+                void *value = malloc(strlen(name) + sizeof(char) + sizeof(Node *));
+                strcpy(value, name);
+                global = new_node(GENERAL_NODE, OperatorValue(node)->rhs->type, value);
+                list_append(global_list, global);
+                *(Node **)(global->value + strlen(name) + sizeof(char)) = OperatorValue(node)->rhs;
+            }
             mnemonic("mov [rax], rcx");
             mnemonic("mov rax, [rax]");
             break;
@@ -233,6 +245,8 @@ void generate(Node *node) {
         switch (node->type) {
         case PROGRAM:
             program = node;
+            global_list = list_new();
+
             mnemonic(".intel_syntax noprefix");
             mnemonic(".text");
             mnemonic(".global _start");
@@ -281,10 +295,28 @@ void generate(Node *node) {
                 mnemonic_printf(" 0x00");
                 mnemonic_end();
             }
-            for (size_t index = 0; index < ListValue(ProgramValue(program)->global_list)->size; ++index) {
-                const char *name = StringValue(ListValue(ProgramValue(program)->global_list)->nodes[index]) + sizeof(char);
-                mnemonic(".global _%s", name);
-                label("_%s: .quad 0", name);
+            for (size_t index = 0; index < ListValue(global_list)->size; ++index) {
+                Node *node = ListValue(global_list)->nodes[index];
+                const char *name = node->value;
+                mnemonic(".global _%s", name + sizeof(char));
+                label("_%s:", name + sizeof(char));
+                Node *n = *(Node **)(node->value + strlen(name) + sizeof(char));
+                debug("%s%s", node_class_string(n), node_string(n));
+                switch (n->type) {
+                case FUNCTION:
+                    mnemonic(".quad function.%zu", list_index(ProgramValue(program)->function_list, n));
+                    break;
+                case STRING:
+                    mnemonic(".quad string.%zu", list_index(ProgramValue(program)->string_list, n));
+                    break;
+                case NUMBER:
+                    mnemonic(".quad %lld", NumberValue(n));
+                    break;
+                default:
+                    debug("%s%s", node_class_string(n), node_string(n));
+                    assert(0);
+                    break;
+                }
             }
             break;
         default:

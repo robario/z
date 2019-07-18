@@ -48,7 +48,7 @@ Node *program(Node *body) {
     ProgramValue *value = malloc(sizeof(ProgramValue));
     value->function_list = function_list;
     value->string_list = string_list;
-    value->global_list = global_list;
+    value->global_list = list_new();
     value->body = function(list_new_accumulable(), body);
     return new_node(GENERAL_NODE, PROGRAM, value);
 }
@@ -98,14 +98,17 @@ Node *call(Node *operand, Node *actual) {
 Node *locator(Node *identifier) {
     assert(identifier);
     assert(identifier->type == IDENTIFIER);
+    if (is_global(identifier)) {
+        identifier->type = LOCATOR;
+        return identifier;
+    }
     const char *name = StringValue(identifier);
-    Node* list = is_global(identifier) ? global_list : table_top();
-    Node* node = list_find(list, name, strlen(name) + sizeof(char));
+    Node* node = list_find(table_top(), name, strlen(name) + sizeof(char));
     if (node == NULL) {
         node = identifier;
         node->type = LOCATOR;
-        list_append(list, node);
-        verbose("%s into %s", node_string(node), node_string(list));
+        list_append(table_top(), node);
+        verbose("%s into %s", node_string(node), node_string(table_top()));
     }
     return node;
 }
@@ -113,16 +116,14 @@ Node *locator(Node *identifier) {
 Node *delocator(Node *identifier) {
     assert(identifier);
     assert(identifier->type == IDENTIFIER);
+    if (is_global(identifier)) {
+        identifier->type = LOCATOR;
+        return new_node(VALUE_NODE, DELOCATOR, identifier);
+    }
     const char *name = StringValue(identifier);
-    Node* list = is_global(identifier) ? global_list : table_top();
-    Node *node = list_find(list, name, strlen(name) + sizeof(char));
+    Node *node = list_find(table_top(), name, strlen(name) + sizeof(char));
     if (node == NULL) {
-        if (is_global(identifier)) {
-            node = identifier;
-            node->type = LOCATOR;
-        } else {
-            error("use of undeclared identifier %s", node_string(identifier));
-        }
+        error("use of undeclared identifier %s", node_string(identifier));
     }
     return new_node(VALUE_NODE, DELOCATOR, node);
 }

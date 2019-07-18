@@ -72,6 +72,6 @@ is 'x = function () {x = function () {42};x + 7};(x() - 7)()' 42
 is 'square = function (x) {x = x * x};x = 7;square(x) - x' 42
 is 'inc = function () {function (x) {x + 1}};(inc())(41)' 42
 is 'inc = function () {f = function (x) {x + 1}};(inc())(41)' 42
-# is 'x = y = function(){7};f = function(a, b){a() * a() - b()};f(x, y)' 42
+is 'x = y = function () {7};f = function (a, b) {a() * a() - b()};f(x, y)' 42
 
 exit 0
