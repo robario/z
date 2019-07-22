@@ -55,11 +55,7 @@ expression
 assignable
         : additive
         | locator ASSIGN assignable { $$ = binary(ASSIGN, $1, $3); }
-        | function GROUP_BEGIN formal GROUP_END BLOCK_BEGIN sequential_expression BLOCK_END { $$ = function($3, $6); }
-        ;
-
-function
-        : FUNCTION { table_new(); }
+        | FUNCTION { table_new(); } GROUP_BEGIN formal GROUP_END BLOCK_BEGIN sequential_expression BLOCK_END { $$ = function($4, $7); }
         ;
 
 formal

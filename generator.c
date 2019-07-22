@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "./generator.h"
 
 extern FILE *yyout;
@@ -7,8 +9,6 @@ static const ssize_t SPSIZE = 64 / 8;
 
 #if DEBUG
 #include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
 
 static void debug_printf(const char *format, ...) {
     static size_t indent = 0;
@@ -118,15 +118,11 @@ void generate(Node *node) {
         case DELOCATOR:
             generate(NodeValue(node));
             mnemonic("pop rax");
-            if (!is_extern(NodeValue(node)))
-//            if (!is_global(NodeValue(node)))
-            {
-                mnemonic("mov rax, [rax]");
-            }
+            mnemonic("mov rax, [rax]");
             break;
         case LOCATOR:
             if (is_global(node)) {
-                mnemonic("mov rax, [rip + _%s@GOTPCREL]", strrchr(StringValue(node), '.') + sizeof(char));
+                mnemonic("lea rax, [rip + _%s@GOTPCREL]", strrchr(StringValue(node), '.') + sizeof(char));
             } else {
                 mnemonic("mov rax, rbp");
                 mnemonic("sub rax, %zu", SPSIZE * (list_index(FunctionValue(function)->table, node) + 1));
@@ -284,6 +280,16 @@ void generate(Node *node) {
                 mnemonic("ret");
             }
 
+            for (size_t index = 0; index < ListValue(global_list)->size; ++index) {
+                Node *node = ListValue(global_list)->nodes[index];
+                const char *name = node->value;
+                Node *n = *(Node **)(node->value + strlen(name) + sizeof(char));
+                if (n->type == FUNCTION) {
+                    mnemonic(".global _%s", name + sizeof(char));
+                    label("_%s:", name + sizeof(char));
+                    mnemonic("jmp function.%zu", list_index(ProgramValue(program)->function_list, n));
+                }
+            }
             mnemonic(".data");
             for (size_t index = 0; index < ListValue(ProgramValue(program)->string_list)->size; ++index) {
                 label("string.%zu:", index);
@@ -298,20 +304,22 @@ void generate(Node *node) {
             for (size_t index = 0; index < ListValue(global_list)->size; ++index) {
                 Node *node = ListValue(global_list)->nodes[index];
                 const char *name = node->value;
+                Node *n = *(Node **)(node->value + strlen(name) + sizeof(char));
+                if (n->type == FUNCTION) {
+                    continue;
+                }
                 mnemonic(".global _%s", name + sizeof(char));
                 label("_%s:", name + sizeof(char));
-                Node *n = *(Node **)(node->value + strlen(name) + sizeof(char));
-                debug("%s%s", node_class_string(n), node_string(n));
                 switch (n->type) {
-                case FUNCTION:
-                    mnemonic(".quad function.%zu", list_index(ProgramValue(program)->function_list, n));
-                    break;
                 case STRING:
                     mnemonic(".quad string.%zu", list_index(ProgramValue(program)->string_list, n));
                     break;
                 case NUMBER:
                     mnemonic(".quad %lld", NumberValue(n));
                     break;
+                // case DELOCATOR:
+                //     mnemonic(".quad %lld", NumberValue(n));
+                //     break;
                 default:
                     debug("%s%s", node_class_string(n), node_string(n));
                     assert(0);
