@@ -77,6 +77,9 @@ char *node_class_string(Node *node) {
 }
 
 char *node_string(Node *node) {
+    if (node->class == GENERAL_NODE) {
+        return "";
+    }
     char *string;
     size_t size;
     FILE *memout = open_memstream(&string, &size);

@@ -55,9 +55,9 @@ expression
 assignable
         : additive
         | locator ASSIGN assignable { $$ = binary(ASSIGN, $1, $3); }
-        | FUNCTION { table_new(); } GROUP_BEGIN formal GROUP_END BLOCK_BEGIN sequential_expression BLOCK_END { $$ = function($4, $7); }
+        | FUNCTION { table_new(); } GROUP_BEGIN formal GROUP_END BLOCK_BEGIN sequential_expression BLOCK_END { $$ = function($4, $7, NULL); }
+        | FUNCTION { table_new(); } IDENTIFIER GROUP_BEGIN formal GROUP_END BLOCK_BEGIN sequential_expression BLOCK_END { $$ = function($5, $8, $3); }
         ;
-
 formal
         : void { $$ = list_new_accumulable(); }
         | locator { $$ = list_new_accumulable(); list_append($$, $1); }

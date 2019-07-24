@@ -53,6 +53,7 @@ typedef struct {
     Node *parameter_list;
     Node *table;
     Node *body;
+    char *name;
 } FunctionValue;
 #define FunctionValue(node) ((FunctionValue *)(node)->value)
 

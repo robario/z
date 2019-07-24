@@ -48,12 +48,12 @@ Node *program(Node *body) {
     ProgramValue *value = malloc(sizeof(ProgramValue));
     value->function_list = function_list;
     value->string_list = string_list;
-    value->global_list = list_new();
-    value->body = function(list_new_accumulable(), body);
+    value->global_list = global_list;
+    value->body = function(list_new_accumulable(), body, identifier("start"));
     return new_node(GENERAL_NODE, PROGRAM, value);
 }
 
-Node *function(Node *formal, Node *body) {
+Node *function(Node *formal, Node *body, Node *identifier) {
     assert(formal);
     assert(body);
     assert(body->class == LIST_NODE && body->type == SEQUENTIAL);
@@ -63,9 +63,13 @@ Node *function(Node *formal, Node *body) {
     value->table = table_top();
     value->body = body;
     table_restore();
-
     Node *function = new_node(VALUE_NODE, FUNCTION, value);
     list_append(function_list, function);
+    if (identifier == NULL) {
+        asprintf(&value->name, "function.%zu", ListValue(function_list)->size);
+    } else {
+        asprintf(&value->name, "_%s", StringValue(identifier));
+    }
     return function;
 }
 
@@ -92,18 +96,15 @@ Node *call(Node *operand, Node *actual) {
     value->parameter_list = actual;
     value->table = NULL;
     value->body = operand;
+    value->name = NULL;
     return new_node(VALUE_NODE, CALL, value);
 }
 
 Node *locator(Node *identifier) {
     assert(identifier);
     assert(identifier->type == IDENTIFIER);
-    if (is_global(identifier)) {
-        identifier->type = LOCATOR;
-        return identifier;
-    }
     const char *name = StringValue(identifier);
-    Node* node = list_find(table_top(), name, strlen(name) + sizeof(char));
+    Node* node = list_find(table_top(), name, strlen(name) + sizeof(char) * 1);
     if (node == NULL) {
         node = identifier;
         node->type = LOCATOR;
@@ -116,14 +117,11 @@ Node *locator(Node *identifier) {
 Node *delocator(Node *identifier) {
     assert(identifier);
     assert(identifier->type == IDENTIFIER);
-    if (is_global(identifier)) {
-        identifier->type = LOCATOR;
-        return new_node(VALUE_NODE, DELOCATOR, identifier);
-    }
     const char *name = StringValue(identifier);
     Node *node = list_find(table_top(), name, strlen(name) + sizeof(char));
     if (node == NULL) {
-        error("use of undeclared identifier %s", node_string(identifier));
+        node = identifier;
+        node->type = LOCATOR;
     }
     return new_node(VALUE_NODE, DELOCATOR, node);
 }

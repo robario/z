@@ -98,7 +98,6 @@ static void mnemonic_printf(const char *format, ...) {
 void generate(Node *node) {
     static const char *const registers[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
     static const size_t total_registers = sizeof(registers) / sizeof(char *);
-    static Node *global_list;
     static Node *program;
     static Node *function;
 
@@ -120,16 +119,18 @@ void generate(Node *node) {
             mnemonic("pop rax");
             mnemonic("mov rax, [rax]");
             break;
-        case LOCATOR:
-            if (is_global(node)) {
-                mnemonic("lea rax, [rip + _%s@GOTPCREL]", strrchr(StringValue(node), '.') + sizeof(char));
+        case LOCATOR: {
+            size_t index = list_index(FunctionValue(function)->table, node);
+            if (index == (size_t)-1) {
+                mnemonic("lea rax, [rip + _%s@GOTPCREL]", StringValue(node));
             } else {
                 mnemonic("mov rax, rbp");
-                mnemonic("sub rax, %zu", SPSIZE * (list_index(FunctionValue(function)->table, node) + 1));
+                mnemonic("sub rax, %zu", SPSIZE * (index + 1));
             }
             break;
+        }
         case FUNCTION:
-            mnemonic("lea rax, [rip + function.%zu]", list_index(ProgramValue(program)->function_list, node));
+            mnemonic("lea rax, [rip + %s]", FunctionValue(node)->name);
             break;
         case CALL:
             total_stacks = ListValue(FunctionValue(node)->parameter_list)->size;
@@ -196,19 +197,6 @@ void generate(Node *node) {
             mnemonic("sub rax, rcx");
             break;
         case ASSIGN:
-            if (is_global(OperatorValue(node)->lhs) && !is_extern(OperatorValue(node)->lhs)) {
-                const char *name = StringValue(OperatorValue(node)->lhs);
-
-                Node *global = list_find(global_list, name, strlen(name) + sizeof(char));
-                if (global != NULL) {
-                    error("cannot assign global multiple: %s", node_string(OperatorValue(node)->lhs));
-                }
-                void *value = malloc(strlen(name) + sizeof(char) + sizeof(Node *));
-                strcpy(value, name);
-                global = new_node(GENERAL_NODE, OperatorValue(node)->rhs->type, value);
-                list_append(global_list, global);
-                *(Node **)(global->value + strlen(name) + sizeof(char)) = OperatorValue(node)->rhs;
-            }
             mnemonic("mov [rax], rcx");
             mnemonic("mov rax, [rax]");
             break;
@@ -241,19 +229,16 @@ void generate(Node *node) {
         switch (node->type) {
         case PROGRAM:
             program = node;
-            global_list = list_new();
 
             mnemonic(".intel_syntax noprefix");
             mnemonic(".text");
-            mnemonic(".global _start");
-            label("_start:");
-            generate(ProgramValue(program)->body);
-            mnemonic("pop rax");
-            mnemonic("jmp rax");
 
             for (size_t index = 0; index < ListValue(ProgramValue(program)->function_list)->size; ++index) {
                 function = ListValue(ProgramValue(program)->function_list)->nodes[index];
-                label("function.%zu:", index);
+                if (FunctionValue(function)->name[0] == '_') {
+                    mnemonic(".global %s", FunctionValue(function)->name);
+                }
+                label("%s:", FunctionValue(function)->name);
                 size_t total_stacks = ListValue(FunctionValue(function)->table)->size;
 
                 mnemonic("push rbp");
@@ -280,16 +265,6 @@ void generate(Node *node) {
                 mnemonic("ret");
             }
 
-            for (size_t index = 0; index < ListValue(global_list)->size; ++index) {
-                Node *node = ListValue(global_list)->nodes[index];
-                const char *name = node->value;
-                Node *n = *(Node **)(node->value + strlen(name) + sizeof(char));
-                if (n->type == FUNCTION) {
-                    mnemonic(".global _%s", name + sizeof(char));
-                    label("_%s:", name + sizeof(char));
-                    mnemonic("jmp function.%zu", list_index(ProgramValue(program)->function_list, n));
-                }
-            }
             mnemonic(".data");
             for (size_t index = 0; index < ListValue(ProgramValue(program)->string_list)->size; ++index) {
                 label("string.%zu:", index);
@@ -301,13 +276,11 @@ void generate(Node *node) {
                 mnemonic_printf(" 0x00");
                 mnemonic_end();
             }
-            for (size_t index = 0; index < ListValue(global_list)->size; ++index) {
-                Node *node = ListValue(global_list)->nodes[index];
-                const char *name = node->value;
-                Node *n = *(Node **)(node->value + strlen(name) + sizeof(char));
-                if (n->type == FUNCTION) {
-                    continue;
-                }
+
+            for (size_t index = 0; index < ListValue(ProgramValue(program)->global_list)->size; ++index) {
+                Node *node = ListValue(ProgramValue(program)->global_list)->nodes[index];
+                const char *name = GlobalValue(node)->name;
+                Node *n = GlobalValue(node)->node;
                 mnemonic(".global _%s", name + sizeof(char));
                 label("_%s:", name + sizeof(char));
                 switch (n->type) {
@@ -317,12 +290,9 @@ void generate(Node *node) {
                 case NUMBER:
                     mnemonic(".quad %lld", NumberValue(n));
                     break;
-                // case DELOCATOR:
-                //     mnemonic(".quad %lld", NumberValue(n));
-                //     break;
                 default:
                     debug("%s%s", node_class_string(n), node_string(n));
-                    assert(0);
+                    error("initializer element is not a compile-time constant");
                     break;
                 }
             }
